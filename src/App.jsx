@@ -3,7 +3,7 @@ import { Link, Route, Routes, useParams } from 'react-router-dom'
 import './App.css'
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://api.restcountries.com/countries/v5'
-const API_KEY = import.meta.env.VITE_API_KEY || 'rc_live_demo'
+const API_KEY = (import.meta.env.VITE_API_KEY || 'rc_live_demo').trim()
 const FIELDS = 'names,codes,capitals,region,subregion,population,flag,languages,currencies,links,area'
 
 const formatNumber = (value) => new Intl.NumberFormat('pt-BR').format(value || 0)
@@ -25,11 +25,14 @@ function normalizeCountry(country) {
 }
 
 async function apiRequest(path, signal) {
-  const response = await fetch(`${API_URL}${path}`, {
-    signal,
-    headers: { Authorization: `Bearer ${API_KEY}` },
-  })
-  if (!response.ok) throw new Error(`Erro ${response.status}`)
+  const separator = path.includes('?') ? '&' : '?'
+  const requestUrl = `${API_URL}${path}${separator}api-key=${encodeURIComponent(API_KEY)}`
+  const response = await fetch(requestUrl, { signal })
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null)
+    const apiMessage = payload?.errors?.[0]?.message
+    throw new Error(apiMessage || `A API respondeu com o erro ${response.status}.`)
+  }
   const payload = await response.json()
   return payload.data?.objects || []
 }
@@ -72,19 +75,24 @@ function Home() {
   const [query, setQuery] = useState('')
   const [region, setRegion] = useState('Todas')
   const [status, setStatus] = useState('loading')
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     const controller = new AbortController()
     async function loadCountries() {
       try {
         setStatus('loading')
+        setErrorMessage('')
         const pages = await Promise.all([0, 100, 200].map((offset) => apiRequest(`?limit=100&offset=${offset}&response_fields=${FIELDS}`, controller.signal)))
         const data = pages.flat().map(normalizeCountry)
         const uniqueCountries = [...new Map(data.map((country) => [country.cca3, country])).values()]
         setCountries(uniqueCountries.sort((a, b) => a.name.common.localeCompare(b.name.common, 'pt-BR')))
         setStatus('success')
       } catch (error) {
-        if (error.name !== 'AbortError') setStatus('error')
+        if (error.name !== 'AbortError') {
+          setErrorMessage(error.message)
+          setStatus('error')
+        }
       }
     }
     loadCountries()
@@ -129,7 +137,7 @@ function Home() {
           </div>
 
           {status === 'loading' && <div className="state-card"><span className="loader"></span><h3>Carregando países...</h3></div>}
-          {status === 'error' && <div className="state-card error-state"><h3>Não foi possível carregar os países.</h3><p>Verifique sua conexão e tente novamente.</p><button type="button" onClick={() => window.location.reload()}>Tentar novamente</button></div>}
+          {status === 'error' && <div className="state-card error-state"><h3>Não foi possível carregar os países.</h3><p>{errorMessage || 'Verifique sua conexão e tente novamente.'}</p><button type="button" onClick={() => window.location.reload()}>Tentar novamente</button></div>}
           {status === 'success' && filteredCountries.length === 0 && <div className="state-card"><h3>Nenhum país encontrado.</h3><p>Tente outro nome ou selecione outra região.</p></div>}
           {status === 'success' && <div className="country-grid">{filteredCountries.map((country) => <CountryCard key={country.cca3} country={country} />)}</div>}
         </section>
