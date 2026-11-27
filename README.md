@@ -1,16 +1,38 @@
-# React + Vite
+# Atlas — REST Countries Explorer
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Aplicação React criada para a Atividade 2 de Computação em Nuvem da ETEC. O projeto consome a API pública REST Countries e apresenta busca, filtros e páginas de detalhes.
 
-Currently, two official plugins are available:
+## Recursos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- listagem de países;
+- busca pelo nome;
+- filtro por região;
+- rota de detalhes em `/pais/:code`;
+- estados de carregamento, erro e busca vazia;
+- layout responsivo;
+- URL da API configurada por variável de ambiente.
 
-## React Compiler
+## Como executar
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+cp .env.example .env
+npm run dev
+```
 
-## Expanding the Oxlint configuration
+## Variável de ambiente
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```text
+VITE_API_URL=https://api.restcountries.com/countries/v5
+VITE_API_KEY=sua_chave_da_rest_countries
+```
+
+## Build de produção
+
+```bash
+npm run build
+```
+
+No Render, use `npm install && npm run build` como Build Command, `dist` como Publish Directory, cadastre as duas variáveis e crie uma regra Rewrite de `/*` para `/index.html`.
+
+> A chave pública `rc_live_demo` serve apenas para testar a integração e retorna um único exemplo. Para exibir todos os países, crie uma chave gratuita da REST Countries e configure `VITE_API_KEY` no Render.
